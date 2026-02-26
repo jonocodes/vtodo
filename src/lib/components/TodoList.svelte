@@ -4,6 +4,11 @@
   import { activeListId } from '$lib/stores/lists';
   import TodoItem from './TodoItem.svelte';
 
+  let { selectedTodoId = $bindable(null), onSelect }: {
+    selectedTodoId?: string | null;
+    onSelect?: (id: string) => void;
+  } = $props();
+
   const filteredTodos = $derived(
     $todos.filter(t => t.listId === $activeListId)
   );
@@ -20,8 +25,8 @@
   }
 
   function selectTodo(id: string) {
-    // Will open detail panel in Stage 1
-    console.log('select', id);
+    selectedTodoId = id;
+    onSelect?.(id);
   }
 </script>
 
@@ -56,7 +61,7 @@
   <!-- Pending todos -->
   <div class="px-1 py-1">
     {#each pending as todo (todo.id)}
-      <TodoItem {todo} onToggle={toggleTodo} onSelect={selectTodo} />
+      <TodoItem {todo} onToggle={toggleTodo} onSelect={selectTodo} selected={selectedTodoId === todo.id} />
     {/each}
   </div>
 
@@ -75,7 +80,7 @@
     {#if showCompleted}
       <div class="px-1 py-1 opacity-60">
         {#each completed as todo (todo.id)}
-          <TodoItem {todo} onToggle={toggleTodo} onSelect={selectTodo} />
+          <TodoItem {todo} onToggle={toggleTodo} onSelect={selectTodo} selected={selectedTodoId === todo.id} />
         {/each}
       </div>
     {/if}
