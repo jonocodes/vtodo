@@ -1,66 +1,95 @@
-import { writable } from "svelte/store";
+import { writable, get } from 'svelte/store';
+import { browser } from '$app/environment';
+import type { Todo, TodoStatus } from '$lib/models/todo';
+import { createTodo } from '$lib/models/todo';
+import * as todoDB from '$lib/db/todos';
 
-export interface Todo {
-  id: string;
-  listId: string;
-  summary: string;
-  description: string;
-  completed: boolean;
-  priority: number; // 0=none, 1=high, 5=medium, 9=low
-  due?: Date;
-  tags: string[];
-  created: Date;
-  modified: Date;
+// Re-export for convenience
+export type { Todo } from '$lib/models/todo';
+export { createTodo } from '$lib/models/todo';
+
+/** Reactive store for all todos — synced with IndexedDB */
+export const todos = writable<Todo[]>([]);
+
+/** Whether the store has finished initial load from IndexedDB */
+export const todosReady = writable(false);
+
+/** Load all todos from IndexedDB into the store */
+export async function loadTodos(): Promise<void> {
+  if (!browser) return;
+  const all = await todoDB.getAllTodos();
+  todos.set(all);
+  todosReady.set(true);
 }
 
-// Placeholder data for Stage 0
-const demoTodos: Todo[] = [
-  {
-    id: "1",
-    listId: "inbox",
-    summary: "Try out the new todo app",
-    description:
-      "## Getting started\n\nThis is a **markdown** description.\n\n- [x] Install the PWA\n- [ ] Add your first todo\n- [ ] Set up CalDAV sync",
-    completed: false,
-    priority: 1,
-    tags: ["meta"],
-    created: new Date(),
-    modified: new Date(),
-  },
-  {
-    id: "2",
-    listId: "inbox",
-    summary: "Set up Radicale server",
-    description: "",
-    completed: false,
-    priority: 5,
-    tags: [],
-    due: new Date(Date.now() + 86400000),
-    created: new Date(),
-    modified: new Date(),
-  },
-  {
-    id: "3",
-    listId: "groceries",
-    summary: "Milk",
-    description: "",
-    completed: false,
-    priority: 0,
-    tags: [],
-    created: new Date(),
-    modified: new Date(),
-  },
-  {
-    id: "4",
-    listId: "groceries",
-    summary: "Eggs",
-    description: "",
-    completed: true,
-    priority: 0,
-    tags: [],
-    created: new Date(),
-    modified: new Date(),
-  },
-];
+/** Add a new todo and persist it */
+export async function addTodo(listId: string, summary: string, overrides?: Partial<Todo>): Promise<Todo> {
+  const todo = createTodo(listId, summary, overrides);
+  await todoDB.putTodo(todo);
+  todos.update(all => [...all, todo]);
+  return todo;
+}
 
-export const todos = writable<Todo[]>(demoTodos);
+/** Update a todo field and persist */
+export async function updateTodo(id: string, changes: Partial<Todo>): Promise<void> {
+  const all = get(todos);
+  const existing = all.find(t => t.id === id);
+  if (!existing) return;
+
+  const updated: Todo = { ...existing, ...changes, modified: new Date() };
+  await todoDB.putTodo(updated);
+  todos.update(all => all.map(t => t.id === id ? updated : t));
+}
+
+/** Toggle completion status */
+export async function toggleTodo(id: string): Promise<void> {
+  const all = get(todos);
+  const existing = all.find(t => t.id === id);
+  if (!existing) return;
+
+  const isCompleting = existing.status !== 'COMPLETED';
+  const updated: Todo = {
+    ...existing,
+    status: (isCompleting ? 'COMPLETED' : 'NEEDS-ACTION') as TodoStatus,
+    completedAt: isCompleting ? new Date() : null,
+    modified: new Date(),
+  };
+
+  await todoDB.putTodo(updated);
+  todos.update(all => all.map(t => t.id === id ? updated : t));
+}
+
+/** Delete a todo */
+export async function removeTodo(id: string): Promise<void> {
+  await todoDB.deleteTodo(id);
+  todos.update(all => all.filter(t => t.id !== id));
+}
+
+/** Dismiss a specific reminder on a todo */
+export async function dismissReminder(todoId: string, reminderIndex: number): Promise<void> {
+  const all = get(todos);
+  const existing = all.find(t => t.id === todoId);
+  if (!existing) return;
+
+  const reminders = existing.reminders.map((r, i) =>
+    i === reminderIndex ? { ...r, dismissed: true } : r
+  );
+  const updated: Todo = { ...existing, reminders, modified: new Date() };
+  await todoDB.putTodo(updated);
+  todos.update(all => all.map(t => t.id === todoId ? updated : t));
+}
+
+/** Delete all todos in a list */
+export async function removeTodosByList(listId: string): Promise<void> {
+  const all = get(todos);
+  const toRemove = all.filter(t => t.listId === listId);
+  for (const t of toRemove) {
+    await todoDB.deleteTodo(t.id);
+  }
+  todos.update(all => all.filter(t => t.listId !== listId));
+}
+
+// Initialize on first load in browser
+if (browser) {
+  loadTodos();
+}

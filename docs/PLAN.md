@@ -127,19 +127,19 @@ Each todo item maps to a single VTODO object. Here's how your features map:
 ### Stage 1 — Local-only todo management (1 week)
 **Goal:** Fully functional todo app with no sync. All data in IndexedDB.
 
-- [ ] Data layer: IndexedDB schema for todos and lists, CRUD operations
-- [ ] VTODO model: TypeScript interfaces matching VTODO properties
-- [ ] List management: create, rename, delete, reorder lists
-- [ ] Todo CRUD: add, edit, complete, delete todos
-- [ ] Quick-add input bar with keyboard shortcut
-- [ ] Checkbox-focused list view with inline editing
-- [ ] Priority support (visual indicator, sort by priority)
-- [ ] Due dates (date picker, sort/filter by due date)
-- [ ] Basic recurrence (daily, weekly, monthly, custom RRULE)
-- [ ] Minimal notes per item (expandable text field)
-- [ ] Checklist sub-items within a todo (markdown checkboxes in description)
-- [ ] Tags/categories (add, filter by tag)
-- [ ] Reminders (notification API, scheduled via service worker)
+- [x] Data layer: IndexedDB schema for todos and lists, CRUD operations
+- [x] VTODO model: TypeScript interfaces matching VTODO properties
+- [x] List management: create, rename, delete, reorder lists
+- [x] Todo CRUD: add, edit, complete, delete todos
+- [x] Quick-add input bar with keyboard shortcut
+- [x] Checkbox-focused list view with inline editing
+- [x] Priority support (visual indicator, sort by priority)
+- [x] Due dates (date picker, sort/filter by due date)
+- [x] Basic recurrence (daily, weekly, monthly, custom RRULE)
+- [x] Minimal notes per item (expandable text field)
+- [x] Checklist sub-items within a todo (markdown checkboxes in description)
+- [x] Tags/categories (add, filter by tag)
+- [x] Reminders (notification API, scheduled via service worker)
 
 **Deliverable:** A complete offline todo app. Usable as a daily driver at this point.
 

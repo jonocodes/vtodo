@@ -1,6 +1,6 @@
 
 <script lang="ts">
-  import { todos } from '$lib/stores/todos';
+  import { todos, addTodo, toggleTodo, removeTodo } from '$lib/stores/todos';
   import { activeListId } from '$lib/stores/lists';
   import TodoItem from './TodoItem.svelte';
 
@@ -9,19 +9,65 @@
     onSelect?: (id: string) => void;
   } = $props();
 
-  const filteredTodos = $derived(
-    $todos.filter(t => t.listId === $activeListId)
+  // Filter and sort todos based on active list
+  const filteredTodos = $derived.by(() => {
+    const listId = $activeListId;
+    const all = $todos;
+
+    if (listId === '_today') {
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
+      return all.filter(t => t.due && new Date(t.due) <= todayEnd);
+    }
+    if (listId === '_upcoming') {
+      const next7 = new Date();
+      next7.setDate(next7.getDate() + 7);
+      return all.filter(t => t.due && new Date(t.due) <= next7);
+    }
+    return all.filter(t => t.listId === listId);
+  });
+
+  const pending = $derived(
+    filteredTodos
+      .filter(t => t.status !== 'COMPLETED')
+      .sort((a, b) => {
+        // Sort: high priority first, then by due date, then by creation
+        if (a.priority !== b.priority) {
+          const ap = a.priority || 10;
+          const bp = b.priority || 10;
+          return ap - bp;
+        }
+        if (a.due && b.due) return new Date(a.due).getTime() - new Date(b.due).getTime();
+        if (a.due) return -1;
+        if (b.due) return 1;
+        return a.sortOrder - b.sortOrder;
+      })
   );
 
-  const pending = $derived(filteredTodos.filter(t => !t.completed));
-  const completed = $derived(filteredTodos.filter(t => t.completed));
+  const completed = $derived(
+    filteredTodos.filter(t => t.status === 'COMPLETED')
+  );
 
   let showCompleted = $state(false);
+  let quickAddValue = $state('');
 
-  function toggleTodo(id: string) {
-    todos.update(all =>
-      all.map(t => t.id === id ? { ...t, completed: !t.completed, modified: new Date() } : t)
-    );
+  async function handleQuickAdd(e: KeyboardEvent) {
+    if (e.key === 'Enter' && quickAddValue.trim()) {
+      const listId = $activeListId.startsWith('_') ? 'inbox' : $activeListId;
+      await addTodo(listId, quickAddValue.trim());
+      quickAddValue = '';
+    }
+  }
+
+  function handleToggle(id: string) {
+    toggleTodo(id);
+  }
+
+  function handleDelete(id: string) {
+    if (selectedTodoId === id) {
+      selectedTodoId = null;
+    }
+    removeTodo(id);
   }
 
   function selectTodo(id: string) {
@@ -31,39 +77,30 @@
 </script>
 
 <div class="flex-1 overflow-y-auto">
-  <!-- Quick add (placeholder) -->
+  <!-- Quick add -->
   <div class="px-4 py-3 border-b" style="border-color: var(--color-border);">
     <input
       type="text"
-      placeholder="Add a todo..."
+      placeholder="Add a todo... (Enter to add)"
       class="w-full bg-transparent text-sm outline-none placeholder-opacity-50"
       style="color: var(--color-text);"
-      onkeydown={(e) => {
-        if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
-          const val = (e.target as HTMLInputElement).value.trim();
-          todos.update(all => [...all, {
-            id: crypto.randomUUID(),
-            listId: $activeListId,
-            summary: val,
-            description: '',
-            completed: false,
-            priority: 0,
-            tags: [],
-            created: new Date(),
-            modified: new Date()
-          }]);
-          (e.target as HTMLInputElement).value = '';
-        }
-      }}
+      bind:value={quickAddValue}
+      onkeydown={handleQuickAdd}
     />
   </div>
 
   <!-- Pending todos -->
-  <div class="px-1 py-1">
-    {#each pending as todo (todo.id)}
-      <TodoItem {todo} onToggle={toggleTodo} onSelect={selectTodo} selected={selectedTodoId === todo.id} />
-    {/each}
-  </div>
+  {#if pending.length === 0 && completed.length === 0}
+    <div class="px-4 py-12 text-center">
+      <p class="text-sm" style="color: var(--color-text-muted);">No todos yet. Add one above!</p>
+    </div>
+  {:else}
+    <div class="px-1 py-1">
+      {#each pending as todo (todo.id)}
+        <TodoItem {todo} onToggle={handleToggle} onSelect={selectTodo} onDelete={handleDelete} selected={selectedTodoId === todo.id} />
+      {/each}
+    </div>
+  {/if}
 
   <!-- Completed section -->
   {#if completed.length > 0}
@@ -80,7 +117,7 @@
     {#if showCompleted}
       <div class="px-1 py-1 opacity-60">
         {#each completed as todo (todo.id)}
-          <TodoItem {todo} onToggle={toggleTodo} onSelect={selectTodo} selected={selectedTodoId === todo.id} />
+          <TodoItem {todo} onToggle={handleToggle} onSelect={selectTodo} onDelete={handleDelete} selected={selectedTodoId === todo.id} />
         {/each}
       </div>
     {/if}

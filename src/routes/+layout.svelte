@@ -10,7 +10,14 @@
   let sidebarCollapsed = $state(false);
   let mobileMenuOpen = $state(false);
 
-  const activeList = $derived($lists.find(l => l.id === $activeListId));
+  const smartListNames: Record<string, string> = {
+    '_today': 'Today',
+    '_upcoming': 'Upcoming',
+  };
+
+  const activeListName = $derived(
+    smartListNames[$activeListId] ?? $lists.find(l => l.id === $activeListId)?.name ?? 'Inbox'
+  );
 
   // Close mobile menu when list changes
   $effect(() => {
@@ -52,7 +59,7 @@
         </svg>
       </button>
       <h2 class="text-base font-medium" style="color: var(--color-text);">
-        {activeList?.name ?? 'Inbox'}
+        {activeListName}
       </h2>
 
       <!-- Sync status placeholder -->
@@ -65,4 +72,3 @@
     {@render children()}
   </main>
 </div>
-

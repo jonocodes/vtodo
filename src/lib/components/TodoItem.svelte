@@ -1,20 +1,26 @@
 
 <script lang="ts">
   import type { Todo } from '$lib/stores/todos';
-  import { renderMarkdown } from '$lib/utils/markdown';
 
-  let { todo, onToggle, onSelect, selected = false }: {
+  let { todo, onToggle, onSelect, onDelete, selected = false }: {
     todo: Todo;
     onToggle: (id: string) => void;
     onSelect: (id: string) => void;
+    onDelete?: (id: string) => void;
     selected?: boolean;
   } = $props();
 
-  let expanded = $state(false);
+  const isCompleted = $derived(todo.status === 'COMPLETED');
 
   const priorityColors: Record<number, string> = {
     1: 'var(--color-danger)',
+    2: 'var(--color-danger)',
+    3: 'var(--color-danger)',
+    4: 'var(--color-danger)',
     5: 'var(--color-accent)',
+    6: 'var(--color-text-muted)',
+    7: 'var(--color-text-muted)',
+    8: 'var(--color-text-muted)',
     9: 'var(--color-text-muted)',
   };
 
@@ -24,8 +30,10 @@
 
   function formatDue(d: Date): string {
     const now = new Date();
-    const diff = d.getTime() - now.getTime();
-    const days = Math.ceil(diff / 86400000);
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dueStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const diff = dueStart.getTime() - todayStart.getTime();
+    const days = Math.round(diff / 86400000);
     if (days < 0) return `${Math.abs(days)}d overdue`;
     if (days === 0) return 'Today';
     if (days === 1) return 'Tomorrow';
@@ -35,7 +43,11 @@
 
   const dueColor = $derived(() => {
     if (!todo.due) return '';
-    const days = Math.ceil((todo.due.getTime() - Date.now()) / 86400000);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const dueStart = new Date(todo.due);
+    dueStart.setHours(0, 0, 0, 0);
+    const days = Math.round((dueStart.getTime() - todayStart.getTime()) / 86400000);
     if (days < 0) return 'var(--color-danger)';
     if (days === 0) return 'var(--color-accent)';
     return 'var(--color-text-muted)';
@@ -56,9 +68,9 @@
   <button
     onclick={(e: MouseEvent) => { e.stopPropagation(); onToggle(todo.id); }}
     class="mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors"
-    style="border-color: {priorityBorder}; {todo.completed ? `background: ${priorityBorder};` : ''}"
+    style="border-color: {priorityBorder}; {isCompleted ? `background: ${priorityBorder};` : ''}"
   >
-    {#if todo.completed}
+    {#if isCompleted}
       <svg class="w-3 h-3" fill="white" viewBox="0 0 20 20">
         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
       </svg>
@@ -69,8 +81,8 @@
   <div class="flex-1 min-w-0">
     <div class="flex items-center gap-2">
       <span
-        class="text-sm leading-snug {todo.completed ? 'line-through' : ''}"
-        style="{todo.completed ? 'color: var(--color-text-muted);' : 'color: var(--color-text);'}"
+        class="text-sm leading-snug {isCompleted ? 'line-through' : ''}"
+        style="{isCompleted ? 'color: var(--color-text-muted);' : 'color: var(--color-text);'}"
       >
         {todo.summary}
       </span>
@@ -82,29 +94,37 @@
       {/each}
     </div>
 
-    <!-- Meta line: due date -->
+    <!-- Meta line: due date + recurrence -->
     {#if todo.due}
-      <div class="text-xs mt-0.5" style="color: {dueColor()};">
+      <div class="flex items-center gap-1 text-xs mt-0.5" style="color: {dueColor()};">
         {formatDue(todo.due)}
-      </div>
-    {/if}
-
-    <!-- Expanded: markdown description -->
-    {#if expanded && todo.description}
-      <div
-        class="mt-2 text-sm prose prose-sm dark:prose-invert max-w-none"
-        style="color: var(--color-text);"
-      >
-        {@html renderMarkdown(todo.description)}
+        {#if todo.rrule}
+          <span title="Recurring">↻</span>
+        {/if}
       </div>
     {/if}
   </div>
 
-  <!-- Expand indicator -->
+  <!-- Delete button (shown on hover) -->
+  {#if onDelete}
+    <button
+      onclick={(e: MouseEvent) => { e.stopPropagation(); onDelete?.(todo.id); }}
+      class="opacity-0 group-hover:opacity-100 p-1 rounded hover:opacity-80 flex-shrink-0 transition-opacity"
+      style="color: var(--color-text-muted);"
+      title="Delete"
+    >
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  {/if}
+
+  <!-- Notes indicator -->
   {#if todo.description}
     <span
-      class="text-xs mt-1 transition-transform flex-shrink-0"
-      style="color: var(--color-text-muted); transform: rotate({expanded ? '90deg' : '0deg'});"
-    >▶</span>
+      class="text-[10px] mt-1.5 flex-shrink-0"
+      style="color: var(--color-text-muted);"
+      title="Has notes"
+    >&#9998;</span>
   {/if}
 </div>
