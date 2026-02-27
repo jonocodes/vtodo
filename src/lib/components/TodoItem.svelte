@@ -3,10 +3,11 @@
   import type { Todo } from '$lib/stores/todos';
   import { renderMarkdown } from '$lib/utils/markdown';
 
-  let { todo, onToggle, onSelect }: {
+  let { todo, onToggle, onSelect, selected = false }: {
     todo: Todo;
     onToggle: (id: string) => void;
     onSelect: (id: string) => void;
+    selected?: boolean;
   } = $props();
 
   let expanded = $state(false);
@@ -43,13 +44,13 @@
 
 <div
   class="group flex items-start gap-3 px-3 py-2 rounded-lg transition-colors cursor-pointer"
-  style="background: transparent;"
-  onmouseenter={(e) => (e.currentTarget as HTMLElement).style.background = 'var(--color-surface)'}
-  onmouseleave={(e) => (e.currentTarget as HTMLElement).style.background = 'transparent'}
-  onclick={() => todo.description ? expanded = !expanded : onSelect(todo.id)}
+  style="background: {selected ? 'var(--color-surface)' : 'transparent'};"
+  onmouseenter={(e) => { if (!selected) (e.currentTarget as HTMLElement).style.background = 'var(--color-surface)'; }}
+  onmouseleave={(e) => { if (!selected) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+  onclick={() => onSelect(todo.id)}
   role="button"
   tabindex="0"
-  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); expanded = !expanded; }}}
+  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(todo.id); }}}
 >
   <!-- Checkbox -->
   <button
