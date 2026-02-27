@@ -21,17 +21,24 @@ A minimal, offline-first PWA for managing todos. Speaks CalDAV/VTODO natively.
 ## Development
 
 ```
-npm install
-npm run dev
+bun install
+bun dev
 ```
+visit http://localhost:5173
+
+
+Docker:
+
+```
+docker compose up
+```
+visit http://localhost:8080
+
 
 Build for production:
 
 ```
-npm run build
-npm run preview
+bun run build
+bun run preview
 ```
-
-## License
-
-MIT
+Visit: http://localhost:4173
