@@ -19,20 +19,20 @@ Storage format: iCalendar VTODO (RFC 5545 / RFC 7986)
 
 Each todo item maps to a single VTODO object. Here's how your features map:
 
-| Feature | VTODO Property | Notes |
-|---|---|---|
-| Title | `SUMMARY` | |
-| Done/not done | `STATUS` + `COMPLETED` | `COMPLETED` / `NEEDS-ACTION` / `IN-PROCESS` |
-| Due date/time | `DUE` | |
-| Priority | `PRIORITY` | 1-9 scale (1=high, 9=low, 0=undefined) |
-| Recurrence | `RRULE` | Full RFC 5545 recurrence rules |
-| Reminders | `VALARM` | Nested alarm components |
-| Notes | `DESCRIPTION` | Markdown rendered in app, stored as plain text (round-trips through CalDAV as-is since markdown is valid plain text) |
+| Feature               | VTODO Property                | Notes                                                                                                                                                           |
+| --------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Title                 | `SUMMARY`                     |                                                                                                                                                                 |
+| Done/not done         | `STATUS` + `COMPLETED`        | `COMPLETED` / `NEEDS-ACTION` / `IN-PROCESS`                                                                                                                     |
+| Due date/time         | `DUE`                         |                                                                                                                                                                 |
+| Priority              | `PRIORITY`                    | 1-9 scale (1=high, 9=low, 0=undefined)                                                                                                                          |
+| Recurrence            | `RRULE`                       | Full RFC 5545 recurrence rules                                                                                                                                  |
+| Reminders             | `VALARM`                      | Nested alarm components                                                                                                                                         |
+| Notes                 | `DESCRIPTION`                 | Markdown rendered in app, stored as plain text (round-trips through CalDAV as-is since markdown is valid plain text)                                            |
 | Checklist (sub-items) | `DESCRIPTION` with checkboxes | `- [x] item` in description body — rendered as interactive checkboxes via markdown. VTODO sub-tasks (RELATED-TO) have poor client support so this is preferred. |
-| Tags/labels | `CATEGORIES` | Comma-separated |
-| List membership | CalDAV Calendar/Collection | Each "list" is a CalDAV calendar |
-| Attachments | `ATTACH` | URI reference to file, or inline base64 for small files |
-| Created/modified | `CREATED` / `LAST-MODIFIED` | Used for conflict detection |
+| Tags/labels           | `CATEGORIES`                  | Comma-separated                                                                                                                                                 |
+| List membership       | CalDAV Calendar/Collection    | Each "list" is a CalDAV calendar                                                                                                                                |
+| Attachments           | `ATTACH`                      | URI reference to file, or inline base64 for small files                                                                                                         |
+| Created/modified      | `CREATED` / `LAST-MODIFIED`   | Used for conflict detection                                                                                                                                     |
 
 ### What this gives you for free
 
@@ -51,6 +51,7 @@ Each todo item maps to a single VTODO object. Here's how your features map:
 ## Tech Stack
 
 ### Frontend
+
 - **Framework:** Svelte 5 + SvelteKit (static adapter for PWA output)
   - Why Svelte: smallest bundle size, no virtual DOM overhead, excellent for a lightweight app. You want TickTick-minimal, not React-heavy.
   - SvelteKit's static adapter produces a pure static site deployable anywhere.
@@ -64,11 +65,13 @@ Each todo item maps to a single VTODO object. Here's how your features map:
 - **PWA:** Vite PWA plugin (`vite-plugin-pwa` with Workbox) for service worker, caching, install prompt
 
 ### Sync Target
+
 - **Primary:** Any CalDAV server (Radicale recommended for self-hosting)
 - **Protocol:** CalDAV (RFC 4791) — REPORT queries, sync-token for efficient delta sync
 - **Conflict resolution:** Last-write-wins per VTODO, using `LAST-MODIFIED` + ETag
 
 ### Dev Tooling
+
 - TypeScript (strict mode)
 - Vite (bundler, dev server)
 - Vitest (unit tests)
@@ -101,6 +104,7 @@ Each todo item maps to a single VTODO object. Here's how your features map:
 ### Key architectural decisions
 
 **IndexedDB is the source of truth for the UI.** The UI always reads from IndexedDB. The sync engine pushes/pulls between IndexedDB and the CalDAV server in the background. This means:
+
 - The app is always fast (no network dependency for reads)
 - Offline works by default
 - Sync is a background process, not a blocking operation
@@ -114,6 +118,7 @@ Each todo item maps to a single VTODO object. Here's how your features map:
 ## Stages
 
 ### Stage 0 — Skeleton (1-2 days)
+
 **Goal:** Empty SvelteKit project that builds as a PWA and can be installed.
 
 - [x] Initialize SvelteKit + static adapter + TypeScript
@@ -125,6 +130,7 @@ Each todo item maps to a single VTODO object. Here's how your features map:
 **Deliverable:** An installable PWA with a static UI skeleton.
 
 ### Stage 1 — Local-only todo management (1 week)
+
 **Goal:** Fully functional todo app with no sync. All data in IndexedDB.
 
 - [x] Data layer: IndexedDB schema for todos and lists, CRUD operations
@@ -144,6 +150,7 @@ Each todo item maps to a single VTODO object. Here's how your features map:
 **Deliverable:** A complete offline todo app. Usable as a daily driver at this point.
 
 ### Stage 2 — CalDAV Sync (1-2 weeks)
+
 **Goal:** Two-way sync with a CalDAV server.
 
 - [ ] CalDAV connection setup UI (server URL, username, password — stored in IndexedDB, encrypted)
@@ -163,6 +170,7 @@ Each todo item maps to a single VTODO object. Here's how your features map:
 **Deliverable:** Full two-way sync. Use on phone browser + laptop browser with shared data.
 
 ### Stage 3 — Polish & UX (1 week)
+
 **Goal:** Make it feel as smooth as TickTick.
 
 - [ ] Animations: checkbox completion, list transitions, swipe gestures (mobile)
@@ -179,6 +187,7 @@ Each todo item maps to a single VTODO object. Here's how your features map:
 **Deliverable:** A polished daily-driver app.
 
 ### Stage 4 — Attachments (3-5 days)
+
 **Goal:** Attach images/files to todos.
 
 - [ ] Attachment UI: add file/image to a todo
@@ -190,6 +199,7 @@ Each todo item maps to a single VTODO object. Here's how your features map:
 **Deliverable:** Working attachment support for photos, documents, etc.
 
 ### Future / Maybe
+
 These are not planned for initial development but the architecture should not preclude them:
 
 - **Calendar view** — render todos with due dates on a calendar grid
