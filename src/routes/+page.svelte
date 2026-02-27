@@ -3,10 +3,22 @@
 	import { get } from 'svelte/store';
 	import TodoList from '$lib/components/TodoList.svelte';
 	import NotesPane from '$lib/components/NotesPane.svelte';
+	import * as Drawer from '$lib/components/ui/drawer/index.js';
 	import { todos, dismissReminder } from '$lib/stores/todos';
 	import { startReminderLoop, stopReminderLoop } from '$lib/utils/notifications';
 
 	let selectedTodoId = $state<string | null>(null);
+	let drawerOpen = $state(false);
+
+	function handleSelect(id: string) {
+		selectedTodoId = id;
+		drawerOpen = true;
+	}
+
+	function handleClose() {
+		selectedTodoId = null;
+		drawerOpen = false;
+	}
 
 	onMount(() => {
 		startReminderLoop({
@@ -21,11 +33,31 @@
 </script>
 
 <div class="flex flex-1 min-h-0">
-	<TodoList bind:selectedTodoId />
+	<TodoList bind:selectedTodoId onSelect={handleSelect} />
 
+	<!-- Desktop: side panel -->
 	{#if selectedTodoId}
 		<div class="w-80 flex-shrink-0 hidden md:flex">
-			<NotesPane todoId={selectedTodoId} onClose={() => (selectedTodoId = null)} />
+			<NotesPane todoId={selectedTodoId} onClose={handleClose} />
 		</div>
 	{/if}
+
+	<!-- Mobile: bottom sheet drawer -->
+	<div class="md:hidden">
+		<Drawer.Root bind:open={drawerOpen} onClose={handleClose}>
+			<Drawer.Portal>
+				<Drawer.Overlay />
+				<Drawer.Content>
+					<Drawer.Header class="sr-only">
+						<Drawer.Title>Todo Details</Drawer.Title>
+					</Drawer.Header>
+					{#if selectedTodoId}
+						<div class="max-h-[85vh] overflow-y-auto">
+							<NotesPane todoId={selectedTodoId} onClose={handleClose} />
+						</div>
+					{/if}
+				</Drawer.Content>
+			</Drawer.Portal>
+		</Drawer.Root>
+	</div>
 </div>
