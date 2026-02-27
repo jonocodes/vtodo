@@ -1,13 +1,27 @@
 <script lang="ts">
 	import '../app.css';
+	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 	import Sidebar from '$lib/components/Sidebar.svelte';
-	import { lists, activeListId } from '$lib/stores/lists';
+	import { lists, activeListId, loadLists } from '$lib/stores/lists';
+	import { loadTodos } from '$lib/stores/todos';
+	import { seedDemoData } from '$lib/seed';
 	import type { Snippet } from 'svelte';
 
 	let { children }: { children: Snippet } = $props();
 
 	let sidebarCollapsed = $state(false);
 	let mobileMenuOpen = $state(false);
+
+	onMount(async () => {
+		if (browser && new URLSearchParams(window.location.search).has('demo')) {
+			const seeded = await seedDemoData();
+			if (seeded) {
+				await loadLists();
+				await loadTodos();
+			}
+		}
+	});
 
 	const smartListNames: Record<string, string> = {
 		_today: 'Today',
