@@ -10,9 +10,14 @@
 	let selectedTodoId = $state<string | null>(null);
 	let drawerOpen = $state(false);
 
+	const mdBreakpoint = '(min-width: 768px)';
+
 	function handleSelect(id: string) {
 		selectedTodoId = id;
-		drawerOpen = true;
+		// Only open the drawer on mobile; desktop uses the side panel
+		if (!window.matchMedia(mdBreakpoint).matches) {
+			drawerOpen = true;
+		}
 	}
 
 	function handleClose() {
