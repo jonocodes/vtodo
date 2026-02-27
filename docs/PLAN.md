@@ -202,6 +202,7 @@ Each todo item maps to a single VTODO object. Here's how your features map:
 
 These are not planned for initial development but the architecture should not preclude them:
 
+- **Manual re-ordering of todos** — drag-to-reorder within a list, persisting sort order to IndexedDB (and eventually CalDAV via `X-APPLE-SORT-ORDER` or similar). Consider: touch-friendly drag handles, keyboard reorder support, how reorder interacts with sort-by-priority/due-date modes.
 - **Calendar view** — render todos with due dates on a calendar grid
 - **Sharing lists** — CalDAV supports shared calendars; UI for managing access
 - **Natural language input** — already scaffolded in Stage 3 with chrono-node
