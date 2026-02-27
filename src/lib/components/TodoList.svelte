@@ -76,7 +76,7 @@
 	}
 </script>
 
-<div class="flex-1 overflow-y-auto">
+<div class="flex-1 overflow-y-auto flex flex-col">
 	<!-- Quick add -->
 	<div class="px-4 py-3 border-b" style="border-color: var(--color-border);">
 		<input
@@ -108,33 +108,35 @@
 		</div>
 	{/if}
 
-	<!-- Completed section -->
+	<!-- Completed section pinned to bottom -->
 	{#if completed.length > 0}
-		<div class="px-4 mt-2">
-			<button
-				onclick={() => (showCompleted = !showCompleted)}
-				class="text-xs font-medium flex items-center gap-1"
-				style="color: var(--color-text-muted);"
-			>
-				<span
-					class="transition-transform"
-					style="transform: rotate({showCompleted ? '90deg' : '0deg'});">▶</span
+		<div class="mt-auto border-t" style="border-color: var(--color-border);">
+			<div class="px-4 py-2">
+				<button
+					onclick={() => (showCompleted = !showCompleted)}
+					class="text-xs font-medium flex items-center gap-1"
+					style="color: var(--color-text-muted);"
 				>
-				Completed ({completed.length})
-			</button>
-		</div>
-		{#if showCompleted}
-			<div class="px-1 py-1 opacity-60">
-				{#each completed as todo (todo.id)}
-					<TodoItem
-						{todo}
-						onToggle={handleToggle}
-						onSelect={selectTodo}
-						onDelete={handleDelete}
-						selected={selectedTodoId === todo.id}
-					/>
-				{/each}
+					<span
+						class="transition-transform"
+						style="transform: rotate({showCompleted ? '90deg' : '0deg'});">▶</span
+					>
+					Completed ({completed.length})
+				</button>
 			</div>
-		{/if}
+			{#if showCompleted}
+				<div class="px-1 py-1 opacity-60">
+					{#each completed as todo (todo.id)}
+						<TodoItem
+							{todo}
+							onToggle={handleToggle}
+							onSelect={selectTodo}
+							onDelete={handleDelete}
+							selected={selectedTodoId === todo.id}
+						/>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>
