@@ -81,16 +81,22 @@
 	}}
 >
 	<!-- Checkbox -->
-	<input
-		type="checkbox"
-		checked={isCompleted}
+	<button
 		onclick={(e: MouseEvent) => {
 			e.stopPropagation();
 			onToggle(todo.id);
 		}}
-		class="mt-0.5 w-4 h-4 flex-shrink-0 rounded cursor-pointer accent-[--checkbox-color]"
-		style="--checkbox-color: {priorityBorder};"
-	/>
+		class="mt-0.5 w-4 h-4 flex-shrink-0 rounded cursor-pointer border-2 flex items-center justify-center"
+		style="border-color: {priorityBorder}; background: {isCompleted ? priorityBorder : 'transparent'};"
+		role="checkbox"
+		aria-checked={isCompleted}
+	>
+		{#if isCompleted}
+			<svg class="w-3 h-3" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="3">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+			</svg>
+		{/if}
+	</button>
 
 	<!-- Content -->
 	<div class="flex-1 min-w-0">
